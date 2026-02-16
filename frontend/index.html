@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher's Batch-Vault</title>
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/api.js" defer></script>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Teacher's Batch-Vault</h1>
+            <p>Manage your student batches and share watermarked PDFs securely.</p>
+        </header>
+
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 2rem;">
+            <button class="btn" onclick="openCreateBatchModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Create New Batch
+            </button>
+        </div>
+
+        <div id="batch-list" class="grid">
+            <!-- Batches will be injected here -->
+            <div class="card" style="text-align: center; grid-column: 1 / -1;">
+                <p>Loading batches...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Batch Modal -->
+    <div id="create-batch-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Create New Batch</h2>
+            <p style="margin-bottom: 1.5rem;">Enter a name for the new batch to get started.</p>
+            <input type="text" id="batch-name" placeholder="e.g., Physics - Batch A" autocomplete="off">
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeCreateBatchModal()">Cancel</button>
+                <button class="btn" onclick="submitCreateBatch()">Create Batch</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', loadBatches);
+
+        async function loadBatches() {
+            const list = document.getElementById('batch-list');
+            // list.innerHTML = 'Loading...'; 
+            // Better loading state handled in initial HTML
+
+            try {
+                const batches = await fetchBatches();
+                list.innerHTML = '';
+
+                if (batches.length === 0) {
+                    list.innerHTML = `
+                        <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+                            <h3 style="margin-bottom: 0.5rem; color: var(--text-main);">No batches yet</h3>
+                            <p>Create your first batch to start managing students.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                batches.forEach(batch => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                            <div>
+                                <h3 style="margin-bottom: 0.25rem;">${batch.name}</h3>
+                                <p style="font-size: 0.875rem;">Created: ${new Date(batch.created_at).toLocaleDateString()}</p>
+                            </div>
+                            <span style="background: var(--background-color); padding: 0.5rem 0.75rem; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 600; color: var(--primary-color); display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                                <div>${batch.students.length}</div>
+                                <div style="font-size: 0.6rem; line-height: 1;">${batch.students.length === 1 ? 'Student' : 'Students'}</div>
+                            </span>
+                        </div>
+                        <a href="batch.html?id=${batch.id}" class="btn btn-full">
+                            Manage Batch
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5l7 7-7 7"></path></svg>
+                        </a>
+                    `;
+                    list.appendChild(card);
+                });
+            } catch (error) {
+                console.error(error);
+                list.innerHTML = '<div class="card" style="color: var(--danger-color); text-align: center;">Error loading batches. Please make sure the backend is running.</div>';
+            }
+        }
+
+        const modal = document.getElementById('create-batch-modal');
+        const batchNameInput = document.getElementById('batch-name');
+
+        function openCreateBatchModal() {
+            modal.classList.remove('hidden');
+            setTimeout(() => batchNameInput.focus(), 50); // Small delay for transition
+        }
+
+        function closeCreateBatchModal() {
+            modal.classList.add('hidden');
+            batchNameInput.value = '';
+        }
+
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeCreateBatchModal();
+            }
+        });
+
+        async function submitCreateBatch() {
+            const name = batchNameInput.value.trim();
+            if (!name) return alert('Batch name is required');
+
+            try {
+                await createBatch(name);
+                closeCreateBatchModal();
+                loadBatches();
+            } catch (error) {
+                alert('Failed to create batch');
+            }
+        }
+
+        // Allow Enter key to submit
+        batchNameInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                submitCreateBatch();
+            }
+        });
+    </script>
+</body>
+
+</html>

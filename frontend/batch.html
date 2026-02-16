@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Batch</title>
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/api.js" defer></script>
+</head>
+
+<body>
+    <div class="container">
+        <div style="margin-bottom: 2rem;">
+            <a href="index.html" class="btn btn-secondary"
+                style="display: inline-flex; align-items: center; gap: 0.5rem; padding-left: 1rem; padding-right: 1.25rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Back to Batches
+            </a>
+        </div>
+
+        <header
+            style="text-align: left; margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+            <h1 id="batch-title">Loading...</h1>
+            <p>Batch Management</p>
+        </header>
+
+        <!-- Actions Grid -->
+        <div class="grid" style="margin-bottom: 2rem;">
+            <!-- Upload PDF Section -->
+            <div class="card" style="margin-bottom: 0;">
+                <div style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1rem;">
+                    <div style="background: #e0e7ff; padding: 0.5rem; border-radius: 8px; color: var(--primary-color);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2>1. Upload PDF</h2>
+                        <p style="font-size: 0.875rem;">Upload a PDF to watermark it for all students in this batch.</p>
+                    </div>
+                </div>
+
+                <div class="flex-gap" style="flex-direction: column;">
+                    <input type="file" id="pdf-upload" accept="application/pdf" style="margin-bottom: 0;">
+                    <button class="btn btn-full" onclick="handlePdfUpload()">Generate Watermarked PDFs</button>
+                </div>
+                <p id="upload-status" style="margin-top: 1rem; font-size: 0.875rem; min-height: 1.25rem;"></p>
+            </div>
+
+            <!-- Add Student Section -->
+            <div class="card" style="margin-bottom: 0;">
+                <div style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1rem;">
+                    <div style="background: #dcfce7; padding: 0.5rem; border-radius: 8px; color: var(--success-color);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="8.5" cy="7" r="4"></circle>
+                            <line x1="20" y1="8" x2="20" y2="14"></line>
+                            <line x1="23" y1="11" x2="17" y2="11"></line>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2>2. Add Student</h2>
+                        <p style="font-size: 0.875rem;">Add a new student to this batch.</p>
+                    </div>
+                </div>
+
+                <div class="flex-gap" style="flex-direction: column;">
+                    <input type="text" id="student-name" placeholder="Student Name" style="margin: 0;">
+                    <input type="tel" id="student-phone" placeholder="Phone (e.g. 919876543210)" style="margin: 0;">
+                    <button class="btn btn-full" onclick="handleAddStudent()">Add Student</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student List -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="margin-bottom: 0;">Student List</h2>
+                <span id="student-count"
+                    style="font-size: 0.875rem; color: var(--text-muted); background: var(--background-color); padding: 0.25rem 0.5rem; border-radius: 4px;">0
+                    Students</span>
+            </div>
+
+            <table id="student-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>PDF Status</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Students will be injected here -->
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: var(--text-muted);">Loading students...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const batchId = urlParams.get('id');
+        let currentBatch = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!batchId) {
+                alert('No batch ID provided');
+                window.location.href = 'index.html';
+                return;
+            }
+            loadBatchDetails();
+        });
+
+        async function loadBatchDetails() {
+            try {
+                const batch = await getBatch(batchId);
+                currentBatch = batch;
+                document.getElementById('batch-title').textContent = batch.name;
+                document.title = `Manage ${batch.name}`;
+                renderStudents(batch.students);
+            } catch (error) {
+                console.error(error);
+                document.body.innerHTML = '<div class="container"><div class="card" style="text-align: center;"><h1 style="color: var(--danger-color);">Batch not found</h1><a href="index.html" class="btn btn-secondary">Back to Home</a></div></div>';
+            }
+        }
+
+        function renderStudents(students) {
+            const tbody = document.querySelector('#student-table tbody');
+            document.getElementById('student-count').textContent = `${students.length} ${students.length === 1 ? 'Student' : 'Students'}`;
+            tbody.innerHTML = '';
+
+            if (students.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">No students added yet.</td></tr>';
+                return;
+            }
+
+            students.forEach(student => {
+                const tr = document.createElement('tr');
+
+                let pdfStatus = '<span style="color: #f59e0b; display: inline-flex; align-items: center; gap: 0.25rem;"><span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#f59e0b;"></span> Pending</span>';
+                let actionBtn = `<button class="btn btn-secondary btn-full" disabled style="opacity: 0.5; padding: 0.5rem;">No PDF</button>`;
+
+                if (student.pdf_url) {
+                    pdfStatus = `<a href="${student.pdf_url}" target="_blank" style="color: var(--success-color); font-weight: 500; display: inline-flex; align-items: center; gap: 0.25rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        View PDF
+                    </a>`;
+
+                    // Escape single quotes
+                    const safeName = student.name.replace(/'/g, "\\'");
+                    const safePhone = student.phone.replace(/'/g, "\\'");
+                    const safeUrl = student.pdf_url.replace(/'/g, "\\'");
+
+                    actionBtn = `<button class="btn btn-whatsapp btn-full" onclick="sendToWhatsApp('${safePhone}', '${safeName}', '${safeUrl}')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                        WhatsApp
+                    </button>`;
+                }
+
+                // Note: The data-label attribute is for the mobile card view CSS
+                tr.innerHTML = `
+                    <td data-label="Name" style="font-weight: 500;">${student.name}</td>
+                    <td data-label="Phone" style="font-family: monospace; color: var(--text-muted);">${student.phone}</td>
+                    <td data-label="Status">${pdfStatus}</td>
+                    <td data-label="Action">${actionBtn}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function handleAddStudent() {
+            const nameInput = document.getElementById('student-name');
+            const phoneInput = document.getElementById('student-phone');
+
+            const name = nameInput.value.trim();
+            const phone = phoneInput.value.trim();
+
+            if (!name || !phone) {
+                alert('Please enter both name and phone number.');
+                return;
+            }
+
+            try {
+                await addStudent(batchId, name, phone);
+                nameInput.value = '';
+                phoneInput.value = '';
+                loadBatchDetails(); // Refresh list
+            } catch (error) {
+                alert(error.message || 'Failed to add student.');
+            }
+        }
+
+        // Allow Enter key to submit student
+        document.getElementById('student-phone').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                handleAddStudent();
+            }
+        });
+
+        async function handlePdfUpload() {
+            const fileInput = document.getElementById('pdf-upload');
+            const file = fileInput.files[0];
+            const status = document.getElementById('upload-status');
+
+            if (!file) {
+                alert('Please select a PDF file first.');
+                return;
+            }
+
+            status.textContent = 'Uploading and processing...';
+            status.style.color = 'var(--primary-color)';
+
+            try {
+                const result = await uploadPdf(batchId, file);
+                status.textContent = result.message;
+                status.style.color = 'var(--success-color)';
+
+                // Clear file input
+                fileInput.value = '';
+
+                loadBatchDetails(); // Refresh list to show new PDF links
+            } catch (error) {
+                status.textContent = error.message;
+                status.style.color = 'var(--danger-color)';
+            }
+        }
+    </script>
+</body>
+
+</html>
