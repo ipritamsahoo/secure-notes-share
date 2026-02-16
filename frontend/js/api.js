@@ -1,7 +1,7 @@
 // --- Configuration ---
 // Uncomment the appropriate line for your environment
-const BACKEND_URL = 'http://127.0.0.1:8000'; // Local
-// const BACKEND_URL = 'https://your-app-name.onrender.com'; // Production
+// const BACKEND_URL = 'http://127.0.0.1:8000'; // Local
+const BACKEND_URL = 'https://secure-notes-share.onrender.com'; // Production
 
 const API_BASE = `${BACKEND_URL}/api`;
 
