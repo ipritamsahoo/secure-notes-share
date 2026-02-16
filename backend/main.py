@@ -8,10 +8,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 # Import from modules
-from database import engine, get_db, settings, Base
-import models
-import schemas
-from utils import watermark_pdf, save_upload_file
+from .database import engine, get_db, settings, Base
+from . import models
+from . import schemas
+from .utils import watermark_pdf, save_upload_file
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
